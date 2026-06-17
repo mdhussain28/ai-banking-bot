@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+requests
+httpx
+python-multipart
+chromadb==0.4.22
+sentence-transformers==2.7.0
+transformers==4.41.2
+huggingface-hub==0.23.2
+PyPDF2
+scikit-learn
+numpy==1.26.4
+pyjwt
+passlib[bcrypt]
