@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BankBot — AI Banking Assistant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0a1628; color: #e0e6f0; height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    .header { background: linear-gradient(135deg,#1a3a6b,#0d2444); padding: 14px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #2a4a8a; }
+    .header-logo { width:44px;height:44px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px; }
+    .header-info h1 { font-size:18px;font-weight:700;color:#fff; }
+    .header-info p  { font-size:11px;color:#7b9fd4; }
+    .header-right   { margin-left:auto;display:flex;align-items:center;gap:10px; }
+    .env-badge { padding:3px 10px;background:#1a3a6b;border:1px solid #2a5a9b;border-radius:20px;font-size:11px;color:#7b9fd4; }
+    .user-badge { padding:3px 10px;background:#1a3a2b;border:1px solid #2a5a3b;border-radius:20px;font-size:11px;color:#86efac; }
+    .status-dot { width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 6px #22c55e;animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    /* ── Login Screen ── */
+    .login-screen { flex:1;display:flex;align-items:center;justify-content:center;background:#0a1628; }
+    .login-card { background:linear-gradient(135deg,#1a2d4a,#0f1e35);border:1px solid #2a4a7a;border-radius:20px;padding:40px;width:360px;text-align:center; }
+    .login-card h2 { color:#fff;margin-bottom:8px;font-size:22px; }
+    .login-card p  { color:#7b9fd4;font-size:13px;margin-bottom:28px; }
+    .login-field { width:100%;padding:12px 16px;background:#1a2d4a;border:1px solid #2a4a7a;border-radius:10px;color:#e0e6f0;font-size:14px;margin-bottom:12px;outline:none; }
+    .login-field:focus { border-color:#2563eb; }
+    .login-btn { width:100%;padding:13px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:opacity 0.2s; }
+    .login-btn:hover { opacity:0.9; }
+    .login-error { color:#fca5a5;font-size:12px;margin-top:8px; }
+
+    /* ── Chat ── */
+    .chat-screen { flex:1;display:none;flex-direction:column; }
+    .chat-container { flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px; }
+    .message { display:flex;gap:10px;max-width:78%;animation:fadeIn 0.3s ease; }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .message.user { align-self:flex-end;flex-direction:row-reverse; }
+    .message.bot  { align-self:flex-start; }
+    .avatar { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+    .bot  .avatar { background:linear-gradient(135deg,#1d4ed8,#1e40af); }
+    .user .avatar { background:linear-gradient(135deg,#374151,#1f2937); }
+    .bubble { padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.6; }
+    .bot  .bubble { background:#1e2d4a;border:1px solid #2a3f6b;border-top-left-radius:4px; }
+    .user .bubble { background:linear-gradient(135deg,#2563eb,#1d4ed8);border-top-right-radius:4px;color:#fff; }
+
+    .risk-badge { display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px; }
+    .risk-high { background:#7f1d1d;color:#fca5a5; }
+    .risk-low  { background:#14532d;color:#86efac; }
+    .risk-none { background:#1e3a5f;color:#93c5fd; }
+    .risk-out  { background:#312e81;color:#c7d2fe; }
+
+    .meta { font-size:11px;color:#4a6fa5;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap; }
+
+    .typing { display:flex;gap:4px;padding:12px 16px;background:#1e2d4a;border:1px solid #2a3f6b;border-radius:14px;width:fit-content; }
+    .typing span { width:7px;height:7px;background:#4a6fa5;border-radius:50%;animation:bounce 1.2s infinite; }
+    .typing span:nth-child(2){animation-delay:0.2s}
+    .typing span:nth-child(3){animation-delay:0.4s}
+    @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+    .quick-actions { padding:10px 20px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #1a2a4a;background:#0d1a2e; }
+    .quick-btn { padding:6px 14px;background:#1a2d4a;border:1px solid #2a4a7a;border-radius:20px;color:#7b9fd4;font-size:12px;cursor:pointer;transition:all 0.2s; }
+    .quick-btn:hover { background:#2563eb;border-color:#2563eb;color:#fff; }
+
+    .input-area { padding:14px 20px;background:#0d1f3c;border-top:1px solid #1a2a4a;display:flex;gap:10px;align-items:center; }
+    .input-area input { flex:1;padding:12px 16px;background:#1a2d4a;border:1px solid #2a4a7a;border-radius:12px;color:#e0e6f0;font-size:14px;outline:none;transition:border 0.2s; }
+    .input-area input:focus { border-color:#2563eb; }
+    .input-area input::placeholder { color:#3a5a8a; }
+    .send-btn { width:44px;height:44px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:white;transition:transform 0.2s,opacity 0.2s; }
+    .send-btn:hover  { transform:scale(1.05); }
+    .send-btn:active { transform:scale(0.95); }
+    .send-btn:disabled { opacity:0.4;cursor:not-allowed; }
+
+    .logout-btn { padding:5px 12px;background:#7f1d1d;border:1px solid #991b1b;border-radius:8px;color:#fca5a5;font-size:12px;cursor:pointer; }
+    .logout-btn:hover { background:#991b1b; }
+
+    .welcome-card { background:linear-gradient(135deg,#1a2d4a,#0f1e35);border:1px solid #2a4a7a;border-radius:16px;padding:24px;text-align:center;margin:10px auto;max-width:420px;width:100%; }
+    .welcome-card h2 { color:#fff;margin-bottom:8px;font-size:18px; }
+    .welcome-card p  { color:#7b9fd4;font-size:13px;line-height:1.6; }
+    .welcome-features { display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap; }
+    .feature { background:#0f1e35;border:1px solid #2a3f6b;border-radius:10px;padding:6px 12px;font-size:11px;color:#7b9fd4; }
+
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:#2a4a7a;border-radius:4px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Login Screen ── -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div style="font-size:40px;margin-bottom:12px">🏦</div>
+      <h2>BankBot Login</h2>
+      <p>Sign in to access your AI banking assistant</p>
+      <input class="login-field" type="text"     id="loginUser" placeholder="Username" />
+      <input class="login-field" type="password" id="loginPass" placeholder="Password"
+             onkeydown="if(event.key==='Enter') doLogin()" />
+      <button class="login-btn" onclick="doLogin()">Sign In</button>
+      <div class="login-error" id="loginError"></div>
+      <div style="margin-top:16px;font-size:11px;color:#4a6fa5">
+        Demo: admin / admin123 &nbsp;|&nbsp; user / user123
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chat Screen ── -->
+  <div class="chat-screen" id="chatScreen">
+
+    <div class="header">
+      <div class="header-logo">🏦</div>
+      <div class="header-info">
+        <h1>BankBot</h1>
+        <p>AI-Powered Banking Assistant</p>
+      </div>
+      <div class="header-right">
+        <span class="user-badge" id="userBadge">👤 user</span>
+        <span class="env-badge" id="envBadge">connecting...</span>
+        <div class="status-dot" id="statusDot"></div>
+        <button class="logout-btn" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+      <div class="welcome-card">
+        <h2>👋 Welcome to BankBot</h2>
+        <p>I'm your AI-powered banking assistant running on Kubernetes with RAG + LLM. Ask me about your accounts, cards, loans, and more.</p>
+        <div class="welcome-features">
+          <span class="feature">🤖 LLM</span>
+          <span class="feature">📚 RAG</span>
+          <span class="feature">🔒 Risk</span>
+          <span class="feature">🧠 Memory</span>
+          <span class="feature">☸️ K8s</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="sendQuick('I lost my debit card')">💳 Lost Card</button>
+      <button class="quick-btn" onclick="sendQuick('What is my account balance')">💰 Balance</button>
+      <button class="quick-btn" onclick="sendQuick('I noticed a fraudulent transaction')">🚨 Fraud</button>
+      <button class="quick-btn" onclick="sendQuick('I need information about a home loan')">🏠 Loan</button>
+      <button class="quick-btn" onclick="sendQuick('I want my account statement')">📄 Statement</button>
+      <button class="quick-btn" onclick="sendQuick('What is the penalty for early loan closure')">❓ Loan Closure</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput"
+             placeholder="Ask me about your account, cards, loans..."
+             onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+
+  </div>
+
+  <script>
+    const API_URL = window.CHAT_API_URL || 'http://192.168.100.11:30080';
+    let authToken = localStorage.getItem('bankbot_token') || '';
+    let authUser  = localStorage.getItem('bankbot_user')  || '';
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    async function doLogin() {
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      if (!user || !pass) {
+        document.getElementById('loginError').textContent = 'Please enter username and password';
+        return;
+      }
+      try {
+        const res  = await fetch(
+          `${API_URL}/login?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`,
+          { method: 'POST' }
+        );
+        const data = await res.json();
+        if (res.ok) {
+          authToken = data.access_token;
+          authUser  = data.username;
+          localStorage.setItem('bankbot_token', authToken);
+          localStorage.setItem('bankbot_user',  authUser);
+          showChat();
+        } else {
+          document.getElementById('loginError').textContent = data.detail || 'Login failed';
+        }
+      } catch {
+        document.getElementById('loginError').textContent = 'Cannot reach BankBot server';
+      }
+    }
+
+    function doLogout() {
+      authToken = '';
+      authUser  = '';
+      localStorage.removeItem('bankbot_token');
+      localStorage.removeItem('bankbot_user');
+      document.getElementById('chatScreen').style.display  = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+    }
+
+    function showChat() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('chatScreen').style.display  = 'flex';
+      document.getElementById('userBadge').textContent     = `👤 ${authUser}`;
+      checkHealth();
+    }
+
+    // Auto-login if token exists
+    if (authToken) showChat();
+
+    // ── Risk helpers ───────────────────────────────────────────────────────────
+    function getRiskClass(f) {
+      return f==='high_risk'?'risk-high':f==='low_risk'?'risk-low':f==='none'?'risk-out':'risk-none';
+    }
+    function getRiskLabel(f) {
+      return f==='high_risk'?'🔴 High Risk':f==='low_risk'?'🟢 Low Risk':f==='none'?'⚪ Out of Scope':'⚪ Unknown';
+    }
+
+    // ── Add message ────────────────────────────────────────────────────────────
+    function addMessage(role, content, meta=null) {
+      const container = document.getElementById('chatContainer');
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      const avatar = role==='bot'?'🏦':'👤';
+      let badge='', metaHtml='';
+      if (meta && role==='bot') {
+        badge = `<div style="margin-top:6px">
+          <span class="risk-badge ${getRiskClass(meta.risk_flag)}">${getRiskLabel(meta.risk_flag)}</span>
+        </div>`;
+        metaHtml = `<div class="meta">
+          <span>🎯 ${(meta.intent||'').replace(/_/g,' ')}</span>
+          <span>📊 ${meta.risk_score??'N/A'}</span>
+          ${meta.llm_used?'<span>🤖 LLM</span>':'<span>⚙️ Rule</span>'}
+          ${meta.rag_used?'<span>📚 RAG</span>':''}
+          <span>🏷️ ${meta.model_version??'N/A'}</span>
+          <span>🖥️ ${meta.served_by??''}</span>
+        </div>`;
+      }
+      div.innerHTML = `<div class="avatar">${avatar}</div>
+        <div><div class="bubble">${content}${badge}</div>${metaHtml}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addTyping() {
+      const container = document.getElementById('chatContainer');
+      const div = document.createElement('div');
+      div.className='message bot'; div.id='typing';
+      div.innerHTML=`<div class="avatar">🏦</div>
+        <div class="typing"><span></span><span></span><span></span></div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTyping() {
+      const t=document.getElementById('typing'); if(t) t.remove();
+    }
+
+    // ── Send message ───────────────────────────────────────────────────────────
+    async function sendMessage() {
+      const input   = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const message = input.value.trim();
+      if (!message) return;
+      addMessage('user', message);
+      input.value=''; sendBtn.disabled=true; addTyping();
+      try {
+        const res = await fetch(
+          `${API_URL}/chat?message=${encodeURIComponent(message)}`,
+          { headers: { 'Authorization': `Bearer ${authToken}` } }
+        );
+        if (res.status===401) { removeTyping(); doLogout(); return; }
+        const data = await res.json();
+        removeTyping();
+        addMessage('bot', data.reply, data);
+      } catch {
+        removeTyping();
+        addMessage('bot',' Unable to reach BankBot. Please try again.');
+      }
+      sendBtn.disabled=false; input.focus();
+    }
+
+    function sendQuick(m) {
+      document.getElementById('messageInput').value=m; sendMessage();
+    }
+
+    // ── Health ─────────────────────────────────────────────────────────────────
+    async function checkHealth() {
+      try {
+        const res=await fetch(`${API_URL}/health`);
+        const data=await res.json();
+        document.getElementById('statusDot').style.background='#22c55e';
+        document.getElementById('statusDot').style.boxShadow='0 0 6px #22c55e';
+        document.getElementById('envBadge').textContent=data.env||'online';
+      } catch {
+        document.getElementById('statusDot').style.background='#ef4444';
+        document.getElementById('statusDot').style.boxShadow='0 0 6px #ef4444';
+        document.getElementById('envBadge').textContent='offline';
+      }
+    }
+
+    checkHealth();
+    setInterval(checkHealth,30000);
+  </script>
+</body>
+</html>
